@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>じゃがバター管理</title>
+</head>
+<body>
+<h1>管理システム</h1>
+<table border="1" id="list">
+<thead><tr><th>番号</th><th>人数</th><th>待ち時間</th><th>操作</th></tr></thead>
+<tbody></tbody>
+</table>
+
+<button onclick="adjustTime(1)">+1分</button>
+<button onclick="adjustTime(-1)">-1分</button>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwkfy4gAeAACYbA1WOY2bzDECzaU0CEuabxv9a5kgzSzY1OQ3gf_fP267StMoMaIOUx/exec";
+
+function loadData() {
+  fetch(GAS_URL + "?mode=admin")
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector("#list tbody");
+      tbody.innerHTML = "";
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row[0]}</td><td>${row[2]}</td><td>${row[3]}</td>
+        <td><button onclick="cancel(${row[0]})">キャンセル</button></td>`;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+function cancel(number) {
+  if (!confirm("この予約をキャンセルしますか？")) return;
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({action: "cancel", number})
+  }).then(res => res.json()).then(r => {
+    if (r.status === "success") loadData();
+    else alert(r.message);
+  });
+}
+
+function adjustTime(offset) {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({action: "adjustTime", offset})
+  }).then(res => res.json()).then(r => {
+    if (r.status === "success") loadData();
+  });
+}
+
+loadData();
+setInterval(loadData, 10000);
+</script>
+</body>
+</html>
